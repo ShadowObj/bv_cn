@@ -9,8 +9,8 @@ on:
 jobs:
   build-release:
     name: Build Release Apk
-    runs-on: macos-latest
-    if: github.repository == 'aaa1115910/bv'
+    runs-on: ubuntu-latest
+    if: github.repository == 'ShadowObj/bv_cn'
 
     steps:
       - name: Checkout
@@ -26,6 +26,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Monkey Patches
+        run: |
+          #sed -i 's/const val appId = "dev\.aaa1115910\.bv"/const val appId = "dev.aaa1115910.bvcn"/' buildSrc/src/main/kotlin/AppConfiguration.kt
+          sed -i 's/isMainlandChina = NetworkUtil\.isMainlandChina()/isMainlandChina = false/' app/src/main/kotlin/dev/aaa1115910/bv/activities/MainActivity.kt
+          sed -i 's/private const val hotFix = [0-9]*/private const val hotFix = 1/' buildSrc/src/main/kotlin/AppConfiguration.kt
+
       - name: Write google-services.json
         env:
           DATA: ${{ secrets.GOOGLE_SERVICES_JSON }}
@@ -39,12 +45,12 @@ jobs:
           SIGNING_PROPERTIES: ${{ secrets.SIGNING_PROPERTIES }}
         run: |
           echo ${{ secrets.SIGNING_PROPERTIES }} > encoded_signing_properties
-          base64 -Dd -i encoded_signing_properties > signing.properties
+          base64 -d -i encoded_signing_properties > signing.properties
 
       - name: Add jks file
         run: |
           echo ${{ secrets.SIGN_KEY }} > ./encoded_key
-          base64 -Dd -i encoded_key > key.jks
+          base64 -d -i encoded_key > key.jks
 
       - name: Build apk
         run: ./gradlew assembleDefaultRelease assembleDefaultDebug
